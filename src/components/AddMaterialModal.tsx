@@ -15,6 +15,9 @@ import {
   Square,
   RefreshCw,
   BookOpen,
+  Brain,
+  GraduationCap,
+  ArrowRight,
 } from "lucide-react";
 import { useStudy, ActiveTab } from "../context/StudyContext";
 import { StudySubject, SourceType, StudyMaterial } from "../types";
@@ -62,6 +65,10 @@ export const AddMaterialModal: React.FC = () => {
   const [processingStage, setProcessingStage] = useState(0);
   const [createdMaterial, setCreatedMaterial] = useState<StudyMaterial | null>(null);
 
+  // Goal Prompt Modal State ("Note" -> "Memorise" -> "Step-by-step lesson")
+  const [isGoalPromptOpen, setIsGoalPromptOpen] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState<"note" | "memorise" | "lesson">("note");
+
   if (!isAddMaterialModalOpen) return null;
 
   // Drag and drop / File upload handler
@@ -80,6 +87,8 @@ export const AddMaterialModal: React.FC = () => {
         setContent(
           `# Scanned Document: ${file.name}\n\n[Study material image loaded for optical OCR extraction. Visual diagrams, formulas, and textbook excerpts prepared for AI analysis.]`
         );
+        // Pop up asking what exactly they want: Note -> Memorise -> Step-by-step lesson
+        setIsGoalPromptOpen(true);
       };
       reader.readAsDataURL(file);
     } else {
@@ -87,6 +96,8 @@ export const AddMaterialModal: React.FC = () => {
       reader.onload = (event) => {
         const text = event.target?.result as string;
         setContent(text || `Uploaded study file: ${file.name}`);
+        // Pop up asking what exactly they want: Note -> Memorise -> Step-by-step lesson
+        setIsGoalPromptOpen(true);
       };
       reader.readAsText(file);
     }
@@ -137,7 +148,9 @@ export const AddMaterialModal: React.FC = () => {
   };
 
   // AI Pipeline Submission
-  const handleSubmit = async () => {
+  const handleSubmit = async (overrideGoal?: "note" | "memorise" | "lesson") => {
+    const finalGoal = overrideGoal || selectedGoal;
+    setSelectedGoal(finalGoal);
     const finalTitle = title.trim() || `${subject} Study Material`;
     let rawContent = content.trim();
 
@@ -247,15 +260,135 @@ export const AddMaterialModal: React.FC = () => {
     setActiveTab(targetTab);
   };
 
+  const handleGoalSelect = (goal: "note" | "memorise" | "lesson") => {
+    setSelectedGoal(goal);
+    setIsGoalPromptOpen(false);
+    handleSubmit(goal);
+  };
+
   return (
     <>
       {isProcessing && (
         <ProcessingScreen
           currentStage={processingStage}
           material={createdMaterial}
+          selectedGoal={selectedGoal}
           onSelectAction={handleFinishAction}
           onClose={() => setIsProcessing(false)}
         />
+      )}
+
+      {/* WHAT EXACTLY DO YOU WANT POPUP MODAL */}
+      {isGoalPromptOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-lg bg-white border border-slate-200 rounded-3xl shadow-2xl p-6 sm:p-7 text-[#0A1931] space-y-5 animate-in zoom-in-95 duration-150">
+            <div className="text-center space-y-1.5">
+              <div className="w-12 h-12 rounded-2xl bg-[#0A1931] text-white flex items-center justify-center mx-auto shadow-md">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-[#0A1931] tracking-tight">
+                What exactly do you want?
+              </h3>
+              <p className="text-xs sm:text-sm text-[#1B2A4A]/70 max-w-md mx-auto">
+                Choose what you want StudyMate to create from your study material:
+              </p>
+            </div>
+
+            {/* 3 Main Choices in exact order: Note -> Memorise -> Step-by-step lesson */}
+            <div className="space-y-2.5">
+              {/* 1. Note */}
+              <button
+                type="button"
+                onClick={() => handleGoalSelect("note")}
+                className="w-full p-4 rounded-2xl border-2 border-slate-200 hover:border-[#0A1931] hover:bg-slate-50 text-left transition flex items-center justify-between group cursor-pointer"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+                    <BookOpen className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-black text-[#0A1931] group-hover:text-emerald-900">
+                        Note
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                        Structured Study Notes
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#1B2A4A]/70 mt-0.5">
+                      Comprehensive study notes with key summaries, definitions & formulas.
+                    </p>
+                  </div>
+                </div>
+                <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-[#0A1931] group-hover:translate-x-1 transition shrink-0 ml-2" />
+              </button>
+
+              {/* 2. Memorise */}
+              <button
+                type="button"
+                onClick={() => handleGoalSelect("memorise")}
+                className="w-full p-4 rounded-2xl border-2 border-slate-200 hover:border-[#0A1931] hover:bg-slate-50 text-left transition flex items-center justify-between group cursor-pointer"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-xl bg-purple-50 text-purple-700 border border-purple-200 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+                    <Brain className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-black text-[#0A1931] group-hover:text-purple-900">
+                        Memorise
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                        Active Recall Cards
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#1B2A4A]/70 mt-0.5">
+                      Spaced repetition flashcards, high-yield mnemonics & memory drills.
+                    </p>
+                  </div>
+                </div>
+                <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-[#0A1931] group-hover:translate-x-1 transition shrink-0 ml-2" />
+              </button>
+
+              {/* 3. Step-by-step lesson */}
+              <button
+                type="button"
+                onClick={() => handleGoalSelect("lesson")}
+                className="w-full p-4 rounded-2xl border-2 border-slate-200 hover:border-[#0A1931] hover:bg-slate-50 text-left transition flex items-center justify-between group cursor-pointer"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+                    <GraduationCap className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-black text-[#0A1931] group-hover:text-blue-900">
+                        Step-by-step lesson
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                        Interactive AI Tutor
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#1B2A4A]/70 mt-0.5">
+                      Guided interactive lessons breaking concepts down step-by-step with checkpoints.
+                    </p>
+                  </div>
+                </div>
+                <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-[#0A1931] group-hover:translate-x-1 transition shrink-0 ml-2" />
+              </button>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setIsGoalPromptOpen(false)}
+                className="text-xs font-semibold text-slate-500 hover:text-[#0A1931] cursor-pointer"
+              >
+                Back to material editor
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
@@ -584,23 +717,64 @@ export const AddMaterialModal: React.FC = () => {
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-white">
-            <button
-              type="button"
-              onClick={() => setIsAddMaterialModalOpen(false)}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-[#1B2A4A]/70 hover:text-[#0A1931] transition cursor-pointer"
-            >
-              Cancel
-            </button>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-6 py-4 border-t border-slate-200 bg-white">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[#0A1931]">Target Output:</span>
+              <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setSelectedGoal("note")}
+                  className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                    selectedGoal === "note"
+                      ? "bg-[#0A1931] text-white shadow-xs"
+                      : "text-slate-600 hover:text-[#0A1931]"
+                  }`}
+                >
+                  Note
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedGoal("memorise")}
+                  className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                    selectedGoal === "memorise"
+                      ? "bg-[#0A1931] text-white shadow-xs"
+                      : "text-slate-600 hover:text-[#0A1931]"
+                  }`}
+                >
+                  Memorise
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedGoal("lesson")}
+                  className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                    selectedGoal === "lesson"
+                      ? "bg-[#0A1931] text-white shadow-xs"
+                      : "text-slate-600 hover:text-[#0A1931]"
+                  }`}
+                >
+                  Step-by-step lesson
+                </button>
+              </div>
+            </div>
 
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A1931] hover:bg-[#1B2A4A] text-white text-xs font-bold shadow-xs transition cursor-pointer"
-            >
-              <Sparkles className="w-4 h-4 text-white" />
-              <span>Analyze & Transform with AI</span>
-            </button>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsAddMaterialModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-[#1B2A4A]/70 hover:text-[#0A1931] transition cursor-pointer"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsGoalPromptOpen(true)}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A1931] hover:bg-[#1B2A4A] text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-white" />
+                <span>Upload & Transform with AI</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

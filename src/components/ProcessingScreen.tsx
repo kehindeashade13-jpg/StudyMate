@@ -18,6 +18,7 @@ import { useStudy, ActiveTab } from "../context/StudyContext";
 interface ProcessingScreenProps {
   currentStage?: number; // 0 to 5
   material?: StudyMaterial | null;
+  selectedGoal?: "note" | "memorise" | "lesson";
   onSelectAction: (tab: ActiveTab) => void;
   isVisible?: boolean;
   onClose?: () => void;
@@ -34,6 +35,7 @@ const processingStages = [
 export const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
   currentStage = 0,
   material = null,
+  selectedGoal = "note",
   onSelectAction,
   isVisible = true,
   onClose,
@@ -137,47 +139,96 @@ export const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
             </div>
 
             <h4 className="text-sm font-semibold text-slate-300 mb-3">
-              Choose what you want to study first:
+              Your material is ready! Choose what to explore:
             </h4>
 
-            {/* Study Mode Selector Cards */}
+            {/* Study Mode Selector Cards in user order: Note -> Memorise -> Step-by-step lesson */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+              {/* 1. Note */}
               <button
-                onClick={() => onSelectAction("learn")}
-                className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700/80 hover:border-blue-500/50 text-left transition group cursor-pointer"
+                onClick={() => onSelectAction("library")}
+                className={`flex items-start gap-3.5 p-3.5 rounded-xl border text-left transition group cursor-pointer ${
+                  selectedGoal === "note"
+                    ? "bg-emerald-950/40 border-emerald-500/80 shadow-md ring-1 ring-emerald-500/30"
+                    : "bg-slate-800/70 hover:bg-slate-800 border-slate-700/80 hover:border-emerald-500/50"
+                }`}
               >
-                <div className="w-10 h-10 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
-                  <GraduationCap className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+                  <BookOpen className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5 font-semibold text-sm text-white group-hover:text-blue-300">
-                    <span>Step-by-Step AI Tutor</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-blue-400" />
+                  <div className="flex items-center gap-1.5 font-semibold text-sm text-white group-hover:text-emerald-300">
+                    <span>Note</span>
+                    {selectedGoal === "note" && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">
+                        Requested
+                      </span>
+                    )}
+                    <ArrowRight className="w-3.5 h-3.5 text-emerald-400" />
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Progressive 6-lesson path with instant understanding checks.
+                    Clean, structured notes with highlights, definitions, and key takeaways.
                   </p>
                 </div>
               </button>
 
+              {/* 2. Memorise */}
               <button
                 onClick={() => onSelectAction("memorise")}
-                className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700/80 hover:border-purple-500/50 text-left transition group cursor-pointer"
+                className={`flex items-start gap-3.5 p-3.5 rounded-xl border text-left transition group cursor-pointer ${
+                  selectedGoal === "memorise"
+                    ? "bg-purple-950/40 border-purple-500/80 shadow-md ring-1 ring-purple-500/30"
+                    : "bg-slate-800/70 hover:bg-slate-800 border-slate-700/80 hover:border-purple-500/50"
+                }`}
               >
                 <div className="w-10 h-10 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
                   <Brain className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5 font-semibold text-sm text-white group-hover:text-purple-300">
-                    <span>Memorise Mode</span>
+                    <span>Memorise</span>
+                    {selectedGoal === "memorise" && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold">
+                        Requested
+                      </span>
+                    )}
                     <ArrowRight className="w-3.5 h-3.5 text-purple-400" />
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Interactive flashcards, mnemonics, and spaced active recall.
+                    Active recall flashcards, mnemonics, and spaced repetition drills.
                   </p>
                 </div>
               </button>
 
+              {/* 3. Step-by-step lesson */}
+              <button
+                onClick={() => onSelectAction("learn")}
+                className={`flex items-start gap-3.5 p-3.5 rounded-xl border text-left transition group cursor-pointer ${
+                  selectedGoal === "lesson"
+                    ? "bg-blue-950/40 border-blue-500/80 shadow-md ring-1 ring-blue-500/30"
+                    : "bg-slate-800/70 hover:bg-slate-800 border-slate-700/80 hover:border-blue-500/50"
+                }`}
+              >
+                <div className="w-10 h-10 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5 font-semibold text-sm text-white group-hover:text-blue-300">
+                    <span>Step-by-step lesson</span>
+                    {selectedGoal === "lesson" && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/40 font-bold">
+                        Requested
+                      </span>
+                    )}
+                    <ArrowRight className="w-3.5 h-3.5 text-blue-400" />
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Guided interactive lesson breaking topics down step-by-step.
+                  </p>
+                </div>
+              </button>
+
+              {/* Diagnostic Quiz */}
               <button
                 onClick={() => onSelectAction("quizzes")}
                 className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700/80 hover:border-amber-500/50 text-left transition group cursor-pointer"
@@ -195,38 +246,35 @@ export const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
                   </p>
                 </div>
               </button>
-
-              <button
-                onClick={() => onSelectAction("library")}
-                className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/50 text-left transition group cursor-pointer"
-              >
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
-                  <BookOpen className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 font-semibold text-sm text-white group-hover:text-emerald-300">
-                    <span>Structured Notes</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-emerald-400" />
-                  </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Clean notes with highlights, formulas, and common mistakes.
-                  </p>
-                </div>
-              </button>
             </div>
 
             <div className="flex justify-end gap-3 pt-2 border-t border-slate-800">
               <button
                 onClick={() => onSelectAction("dashboard")}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition"
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition cursor-pointer"
               >
                 Go to Dashboard
               </button>
               <button
-                onClick={() => onSelectAction("learn")}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition flex items-center gap-2"
+                onClick={() =>
+                  onSelectAction(
+                    selectedGoal === "note"
+                      ? "library"
+                      : selectedGoal === "memorise"
+                      ? "memorise"
+                      : "learn"
+                  )
+                }
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition flex items-center gap-2 cursor-pointer"
               >
-                <span>Start Learning</span>
+                <span>
+                  Open{" "}
+                  {selectedGoal === "note"
+                    ? "Note"
+                    : selectedGoal === "memorise"
+                    ? "Memorise"
+                    : "Step-by-step lesson"}
+                </span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

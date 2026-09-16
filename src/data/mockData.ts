@@ -18,7 +18,8 @@ export const initialUser: UserProfile = {
   id: "user-me",
   name: "Student",
   email: "student@studymate.ai",
-  avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+  phoneNumber: "+1 (555) 438-9201",
+  avatar: "/studymate_logo.jpg",
   bio: "Passionate about active recall, spaced repetition, and turning study materials into understanding!",
   educationLevel: "Undergraduate",
   institution: "University",
@@ -48,41 +49,7 @@ export const initialStudyGroups: StudyGroup[] = [];
 
 export const initialGroupMessages: Record<string, GroupMessage[]> = {};
 
-export const initialFriends: StudyFriend[] = [
-  {
-    id: "friend-1",
-    name: "John Miller",
-    avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
-    subjects: ["Chemistry", "Mathematics", "Physics"],
-    school: "UC Berkeley",
-    interests: ["Physical Chemistry", "Thermodynamics", "MCAT Prep"],
-    goals: "Targeting top 1% score on national chemistry benchmark.",
-    mutualSubjectsCount: 2,
-    status: "none",
-  },
-  {
-    id: "friend-2",
-    name: "Aisha Patel",
-    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
-    subjects: ["Biology", "Chemistry", "Psychology"],
-    school: "Stanford University",
-    interests: ["Neuroscience", "Synaptic Plasticity", "Spaced Recall"],
-    goals: "Researching neurodegenerative disorders & cellular signaling.",
-    mutualSubjectsCount: 3,
-    status: "connected",
-  },
-  {
-    id: "friend-3",
-    name: "Liam O'Connor",
-    avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80",
-    subjects: ["Computer Science", "Mathematics"],
-    school: "MIT",
-    interests: ["Algorithms", "Machine Learning", "Graph Theory"],
-    goals: "Competitive programming and master graph optimization.",
-    mutualSubjectsCount: 2,
-    status: "connected",
-  },
-];
+export const initialFriends: StudyFriend[] = [];
 
 export const initialNotifications: NotificationItem[] = [
   {

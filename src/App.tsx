@@ -19,7 +19,8 @@ import { AddMaterialModal } from "./components/AddMaterialModal";
 import { AssistantDrawer } from "./components/AssistantDrawer";
 import { GlobalSearchModal } from "./components/GlobalSearchModal";
 import { OnboardingModal } from "./components/OnboardingModal";
-import { Sparkles } from "lucide-react";
+import { PracticeStationModal } from "./components/PracticeStationModal";
+import { MessageSquare } from "lucide-react";
 
 const MainLayout: React.FC = () => {
   const { activeTab, isAssistantOpen, setIsAssistantOpen } = useStudy();
@@ -74,10 +75,10 @@ const MainLayout: React.FC = () => {
       {!isAssistantOpen && (
         <button
           onClick={() => setIsAssistantOpen(true)}
-          className="fixed bottom-36 right-5 z-40 px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition hover:scale-105 active:scale-95 cursor-pointer"
+          className="fixed bottom-24 right-5 z-40 px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition hover:scale-105 active:scale-95 cursor-pointer"
           title="Ask StudyMate AI"
         >
-          <Sparkles className="w-4 h-4 text-white animate-pulse" />
+          <MessageSquare className="w-4 h-4 text-white" />
           <span className="hidden sm:inline">AI Tutor</span>
         </button>
       )}
@@ -88,6 +89,7 @@ const MainLayout: React.FC = () => {
       {/* Global Modals & Drawers */}
       <AddMaterialModal />
       <AssistantDrawer />
+      <PracticeStationModal />
       <GlobalSearchModal />
       <OnboardingModal />
     </div>

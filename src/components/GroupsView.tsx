@@ -25,6 +25,7 @@ export const GroupsView: React.FC = () => {
     activeGroup,
     setActiveGroup,
     createStudyGroup,
+    addMemberToGroup,
     groupMessages,
     sendGroupMessage,
     reactToMessage,
@@ -48,6 +49,7 @@ export const GroupsView: React.FC = () => {
 
   // Find friend with phone number state
   const [showFindFriends, setShowFindFriends] = useState(false);
+  const [showAddMemberByPhone, setShowAddMemberByPhone] = useState(false);
   const [phoneCountryCode, setPhoneCountryCode] = useState("+1");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [searchResult, setSearchResult] = useState<{
@@ -57,6 +59,7 @@ export const GroupsView: React.FC = () => {
     isExisting: boolean;
   } | null>(null);
   const [isSearchingPhone, setIsSearchingPhone] = useState(false);
+  const [addedMemberSuccess, setAddedMemberSuccess] = useState<string | null>(null);
 
   const currentGroup = activeGroup || (studyGroups.length > 0 ? studyGroups[0] : null);
   const messages = currentGroup ? groupMessages[currentGroup.id] || [] : [];
@@ -139,6 +142,30 @@ export const GroupsView: React.FC = () => {
     setPhoneNumber("");
     setShowFindFriends(false);
     triggerConfetti();
+  };
+
+  const handleAddFoundMemberToCurrentGroup = () => {
+    if (!searchResult || !currentGroup) return;
+
+    addMemberToGroup(currentGroup.id, {
+      id: `member-phone-${Date.now()}`,
+      name: searchResult.name,
+      avatar: searchResult.avatar,
+      role: "member",
+      isOnline: true,
+      studyStreak: 5,
+    });
+
+    setAddedMemberSuccess(`Added ${searchResult.name} to "${currentGroup.name}"!`);
+    setSearchResult(null);
+    setPhoneNumber("");
+    setShowAddMemberByPhone(false);
+    setShowFindFriends(false);
+    triggerConfetti();
+
+    setTimeout(() => {
+      setAddedMemberSuccess(null);
+    }, 4000);
   };
 
   return (
@@ -278,7 +305,7 @@ export const GroupsView: React.FC = () => {
                         <img
                           src={searchResult.avatar}
                           alt={searchResult.name}
-                          className="w-10 h-10 rounded-full object-cover border-2 border-slate-200"
+                          className="w-10 h-10 rounded-xl object-cover border-2 border-slate-200"
                         />
                         <div>
                           <p className="text-xs font-bold text-[#0A1931]">{searchResult.name}</p>
@@ -291,14 +318,26 @@ export const GroupsView: React.FC = () => {
                       </span>
                     </div>
 
-                    <button
-                      id="start-chat-with-friend-btn"
-                      onClick={handleStartChatWithFriend}
-                      className="w-full py-2 rounded-xl bg-[#0A1931] hover:bg-[#1B2A4A] text-white text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      <span>Start Chat with {searchResult.name}</span>
-                    </button>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      {currentGroup && (
+                        <button
+                          id="add-friend-to-current-group-btn"
+                          onClick={handleAddFoundMemberToCurrentGroup}
+                          className="flex-1 py-2 rounded-xl bg-[#0A1931] hover:bg-[#1B2A4A] text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                        >
+                          <UserPlus className="w-3.5 h-3.5" />
+                          <span>Add to {currentGroup.name}</span>
+                        </button>
+                      )}
+                      <button
+                        id="start-chat-with-friend-btn"
+                        onClick={handleStartChatWithFriend}
+                        className="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#0A1931] border border-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>Start Direct Chat</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -447,7 +486,7 @@ export const GroupsView: React.FC = () => {
                             <img
                               src={msg.senderAvatar}
                               alt={msg.senderName}
-                              className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-slate-200"
+                              className="w-8 h-8 rounded-xl object-cover shrink-0 ring-1 ring-slate-200 border border-slate-200"
                             />
 
                             <div
@@ -573,12 +612,129 @@ export const GroupsView: React.FC = () => {
               {/* TAB: MEMBERS */}
               {activeTabSub === "members" && (
                 <div className="p-6 space-y-4 flex-1 bg-white">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-[#0A1931]">Group Members</h3>
-                    <span className="text-xs text-[#1B2A4A]/60">
-                      {currentGroup.members.length} Active Students
-                    </span>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-sm font-bold text-[#0A1931]">Group Members</h3>
+                      <p className="text-xs text-[#1B2A4A]/60">
+                        {currentGroup.members.length} Active Students in this study circle
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setShowAddMemberByPhone(!showAddMemberByPhone);
+                        setSearchResult(null);
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl bg-[#0A1931] hover:bg-[#1B2A4A] text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer self-start sm:self-auto shadow-2xs"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>{showAddMemberByPhone ? "Close Phone Search" : "Add Member by Phone"}</span>
+                    </button>
                   </div>
+
+                  {/* Success Alert Banner */}
+                  {addedMemberSuccess && (
+                    <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>{addedMemberSuccess}</span>
+                    </div>
+                  )}
+
+                  {/* Add Member by Phone Number Panel */}
+                  {showAddMemberByPhone && (
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3 animate-in fade-in">
+                      <div className="flex items-center gap-2 text-[#0A1931]">
+                        <Phone className="w-4 h-4 text-[#0A1931]" />
+                        <h4 className="text-xs font-bold text-[#0A1931]">
+                          Find & Add Member via Profile Phone Number
+                        </h4>
+                      </div>
+                      <p className="text-[11px] text-[#1B2A4A]/70">
+                        Search any student's phone number to find their account and add them to{" "}
+                        <span className="font-semibold text-[#0A1931]">"{currentGroup.name}"</span>.
+                      </p>
+
+                      <form onSubmit={handleSearchPhone} className="space-y-2.5">
+                        <div className="flex gap-2">
+                          <select
+                            value={phoneCountryCode}
+                            onChange={(e) => setPhoneCountryCode(e.target.value)}
+                            className="px-2.5 py-2 rounded-xl bg-white border border-slate-300 text-xs font-bold text-[#0A1931] focus:outline-none focus:border-[#0A1931]"
+                          >
+                            <option value="+1">+1 (US/CA)</option>
+                            <option value="+44">+44 (UK)</option>
+                            <option value="+234">+234 (NG)</option>
+                            <option value="+91">+91 (IN)</option>
+                            <option value="+61">+61 (AU)</option>
+                            <option value="+49">+49 (DE)</option>
+                            <option value="+33">+33 (FR)</option>
+                            <option value="+27">+27 (ZA)</option>
+                            <option value="+81">+81 (JP)</option>
+                          </select>
+
+                          <input
+                            type="tel"
+                            value={phoneNumber}
+                            onChange={(e) => setPhoneNumber(e.target.value)}
+                            placeholder="e.g. 555-438-9201"
+                            className="flex-1 px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-xs text-[#0A1931] placeholder-slate-400 focus:outline-none focus:border-[#0A1931]"
+                            required
+                          />
+
+                          <button
+                            type="submit"
+                            disabled={isSearchingPhone}
+                            className="px-4 py-2 rounded-xl bg-[#0A1931] hover:bg-[#1B2A4A] text-white text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5"
+                          >
+                            <Search className="w-3.5 h-3.5" />
+                            <span>{isSearchingPhone ? "Finding..." : "Find"}</span>
+                          </button>
+                        </div>
+                      </form>
+
+                      {/* Phone Search Match Result */}
+                      {searchResult && (
+                        <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-2.5 animate-in fade-in">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={searchResult.avatar}
+                                alt={searchResult.name}
+                                className="w-9 h-9 rounded-xl object-cover border border-slate-200"
+                              />
+                              <div>
+                                <p className="text-xs font-bold text-[#0A1931]">{searchResult.name}</p>
+                                <p className="text-[10px] text-[#1B2A4A]/60">
+                                  Matched phone: {searchResult.phone}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                              Registered Student
+                            </span>
+                          </div>
+
+                          <div className="flex justify-end gap-2 pt-1 border-t border-slate-100">
+                            <button
+                              type="button"
+                              onClick={() => setSearchResult(null)}
+                              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-[#0A1931]"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleAddFoundMemberToCurrentGroup}
+                              className="px-4 py-1.5 rounded-lg bg-[#0A1931] hover:bg-[#1B2A4A] text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                            >
+                              <UserPlus className="w-3.5 h-3.5" />
+                              <span>Add to "{currentGroup.name}"</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div className="space-y-2.5">
                     {currentGroup.members.map((member) => (
@@ -591,10 +747,10 @@ export const GroupsView: React.FC = () => {
                             <img
                               src={member.avatar}
                               alt={member.name}
-                              className="w-9 h-9 rounded-full object-cover"
+                              className="w-9 h-9 rounded-xl object-cover border border-slate-200"
                             />
                             {member.isOnline && (
-                              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+                              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
                             )}
                           </div>
                           <div>

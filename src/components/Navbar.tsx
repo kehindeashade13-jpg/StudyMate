@@ -60,7 +60,7 @@ export const Navbar: React.FC = () => {
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 text-[#0A1931]">
       <div className="max-w-6xl mx-auto px-3 sm:px-6 h-15 flex items-center justify-between gap-3">
-        {/* Left: Back to Home button & Menu */}
+        {/* Left: Back to Home button, Menu, and Bold StudyMate Brand */}
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => setActiveTab("dashboard")}
@@ -78,9 +78,24 @@ export const Navbar: React.FC = () => {
             <Menu className="w-4 h-4" />
           </button>
 
+          <div
+            className="flex items-center gap-2.5 cursor-pointer select-none"
+            onClick={() => setActiveTab("dashboard")}
+          >
+            <img
+              src="/studymate_logo.jpg"
+              alt="StudyMate Logo"
+              referrerPolicy="no-referrer"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-cover border border-slate-200 shadow-2xs shrink-0"
+            />
+            <span className="text-xl sm:text-2xl font-black tracking-tight text-[#0A1931]">
+              StudyMate
+            </span>
+          </div>
+
           <div className="border-l border-slate-200 pl-2.5 hidden sm:block">
-            <h2 className="text-sm font-bold text-[#0A1931] tracking-tight">
-              {tabLabels[activeTab] || "StudyMate"}
+            <h2 className="text-xs sm:text-sm font-semibold text-[#1B2A4A]/80 tracking-tight">
+              {tabLabels[activeTab]}
             </h2>
           </div>
         </div>
@@ -183,12 +198,14 @@ export const Navbar: React.FC = () => {
           {/* User Profile Avatar */}
           <button
             onClick={() => setActiveTab("profile")}
-            className="flex items-center gap-1.5 p-1 rounded-xl hover:bg-slate-100 text-[#0A1931] transition"
+            className="flex items-center gap-1.5 p-1 rounded-xl hover:bg-slate-100 text-[#0A1931] transition cursor-pointer"
+            title="User Profile"
           >
             <img
-              src={user.avatar}
+              src={user.avatar || "/studymate_logo.jpg"}
               alt={user.name}
-              className="w-8 h-8 rounded-full object-cover ring-2 ring-[#0A1931]/30"
+              referrerPolicy="no-referrer"
+              className="w-8 h-8 rounded-xl object-cover ring-2 ring-[#0A1931]/20 border border-slate-200 shadow-2xs"
             />
           </button>
         </div>

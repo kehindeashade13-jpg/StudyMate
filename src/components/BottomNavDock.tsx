@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 export const BottomNavDock: React.FC = () => {
-  const { activeTab, setActiveTab } = useStudy();
+  const { activeTab, setActiveTab, user } = useStudy();
 
   const navItems = [
     {
@@ -69,11 +69,24 @@ export const BottomNavDock: React.FC = () => {
               title={item.label}
             >
               <div className="relative">
-                <Icon
-                  className={`w-6 h-6 transition ${
-                    isActive ? "stroke-[2.5] text-[#0A1931]" : "stroke-[1.8]"
-                  }`}
-                />
+                {item.tab === "profile" ? (
+                  <img
+                    src={user.avatar || "/studymate_logo.jpg"}
+                    alt="Profile"
+                    referrerPolicy="no-referrer"
+                    className={`w-6 h-6 rounded-lg object-cover border transition ${
+                      isActive
+                        ? "border-[#0A1931] ring-2 ring-[#0A1931]/30"
+                        : "border-slate-300 opacity-70 hover:opacity-100"
+                    }`}
+                  />
+                ) : (
+                  <Icon
+                    className={`w-6 h-6 transition ${
+                      isActive ? "stroke-[2.5] text-[#0A1931]" : "stroke-[1.8]"
+                    }`}
+                  />
+                )}
                 {item.badge && (
                   <span className="absolute -top-1.5 -right-2.5 bg-[#0A1931] text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full min-w-[16px] text-center leading-tight shadow-xs">
                     {item.badge}

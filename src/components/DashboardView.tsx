@@ -36,11 +36,16 @@ export const DashboardView: React.FC = () => {
     clearAllCourses,
     deleteMaterial,
     setIsAssistantOpen,
+    studyGroups,
+    sendGroupMessage,
+    triggerConfetti,
   } = useStudy();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showQuickPracticeModal, setShowQuickPracticeModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [deckToDelete, setDeckToDelete] = useState<StudyMaterial | null>(null);
 
   // Handle launching modal from query
   const handleLaunchSearch = () => {
@@ -55,10 +60,35 @@ export const DashboardView: React.FC = () => {
     setActiveTab(mode);
   };
 
+  const handleShareDeck = (mat: StudyMaterial, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const shareText = `Study deck "${mat.title}" on StudyMate: ${window.location.origin}`;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(shareText).catch(() => {});
+    }
+    if (studyGroups && studyGroups.length > 0) {
+      sendGroupMessage(
+        studyGroups[0].id,
+        `📚 Shared deck "${mat.title}" with our study group! Practice flashcards & quizzes.`,
+        false
+      );
+    }
+    setToastMessage(`Shared "${mat.title}"! Link copied to clipboard.`);
+    triggerConfetti();
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
   const handleDeleteDeck = (mat: StudyMaterial, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm(`Delete deck "${mat.title}"?`)) {
-      deleteMaterial(mat.id);
+    setDeckToDelete(mat);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deckToDelete) {
+      deleteMaterial(deckToDelete.id);
+      setToastMessage(`Deleted deck "${deckToDelete.title}".`);
+      setDeckToDelete(null);
+      setTimeout(() => setToastMessage(null), 3000);
     }
   };
 
@@ -89,46 +119,63 @@ export const DashboardView: React.FC = () => {
   return (
     <div className="max-w-md sm:max-w-xl mx-auto space-y-5 pb-24 px-1 sm:px-4">
       {/* Top Header Row */}
-      <header className="flex items-center justify-between pt-1">
-        {/* Left Menu Button (Hamburger) */}
-        <button
-          id="top-menu-btn"
-          onClick={() => setIsSidebarOpen(true)}
-          className="w-11 h-11 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-center text-[#0A1931] hover:bg-slate-50 transition cursor-pointer active:scale-95"
-          title="Open Menu"
-        >
-          <Menu className="w-5 h-5 text-[#0A1931] stroke-[2.2]" />
-        </button>
+      <header className="flex items-center justify-between pt-1 gap-2">
+        {/* Left Menu Button (Hamburger) & Bold Website Name */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <button
+            id="top-menu-btn"
+            onClick={() => setIsSidebarOpen(true)}
+            className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-center text-[#0A1931] hover:bg-slate-50 transition cursor-pointer active:scale-95 shrink-0"
+            title="Open Menu"
+          >
+            <Menu className="w-5 h-5 text-[#0A1931] stroke-[2.2]" />
+          </button>
+          <div
+            onClick={() => setActiveTab("dashboard")}
+            className="flex items-center gap-2 sm:gap-2.5 cursor-pointer select-none min-w-0"
+          >
+            <img
+              src="/studymate_logo.jpg"
+              alt="StudyMate Logo"
+              referrerPolicy="no-referrer"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover border border-slate-200 shadow-2xs shrink-0"
+            />
+            <span className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-[#0A1931] truncate">
+              StudyMate
+            </span>
+          </div>
+        </div>
 
-        {/* Right Stats Capsule (ONLY user streaks) */}
+        {/* Right Stats Capsule (ONLY user streaks) - Compact so it never covers the website name */}
         <div
           onClick={() => setActiveTab("progress")}
-          className="bg-white border border-slate-200 rounded-full px-3.5 py-1.5 flex items-center gap-1.5 shadow-2xs cursor-pointer hover:bg-slate-50 transition"
+          className="bg-white border border-slate-200 rounded-full px-2.5 sm:px-3 py-1 flex items-center gap-1 sm:gap-1.5 shadow-2xs cursor-pointer hover:bg-slate-50 transition shrink-0 whitespace-nowrap"
           title={`${user.streakDays || 0} Day Streak`}
         >
-          <Flame className="w-4 h-4 text-orange-500 fill-orange-400" />
-          <span className="font-extrabold text-xs text-[#0A1931]">
-            {user.streakDays || 0} {user.streakDays === 1 ? "day streak" : "days streak"}
+          <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-500 fill-orange-400 shrink-0" />
+          <span className="font-extrabold text-[11px] sm:text-xs text-[#0A1931]">
+            <span className="sm:hidden">{user.streakDays || 0}d</span>
+            <span className="hidden sm:inline">
+              {user.streakDays || 0} {user.streakDays === 1 ? "day streak" : "days streak"}
+            </span>
           </span>
         </div>
       </header>
 
-      {/* Hero Greeting with 3D Floating Axolotl Mascot */}
-      <section className="flex items-center gap-4 pt-1 sm:pt-3">
-        {/* Floating Axolotl Character */}
+      {/* Hero Greeting with StudyMate Logo */}
+      <section className="flex items-center gap-3.5 sm:gap-4 pt-1 sm:pt-3">
+        {/* Floating StudyMate Logo */}
         <motion.div
-          animate={{ y: [0, -6, 0] }}
+          animate={{ y: [0, -5, 0] }}
           transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
           className="relative shrink-0"
         >
-          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl overflow-hidden shadow-xs border-2 border-slate-200 bg-white p-1 flex items-center justify-center">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl overflow-hidden shadow-xs border-2 border-slate-200 bg-white p-1.5 flex items-center justify-center">
             <img
-              src="/study_mascot.jpg"
-              alt="StudyMate Axolotl Mascot"
-              className="w-full h-full object-cover rounded-2xl"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "/mascot.jpg";
-              }}
+              src="/studymate_logo.jpg"
+              alt="StudyMate Logo"
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover rounded-2xl border border-slate-100 shadow-2xs"
             />
           </div>
         </motion.div>
@@ -321,13 +368,23 @@ export const DashboardView: React.FC = () => {
                       </span>
                     </div>
 
-                    <button
-                      onClick={(e) => handleDeleteDeck(mat, e)}
-                      className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition cursor-pointer"
-                      title="Delete deck"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={(e) => handleShareDeck(mat, e)}
+                        className="p-1.5 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition cursor-pointer"
+                        title="Share deck"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
+
+                      <button
+                        onClick={(e) => handleDeleteDeck(mat, e)}
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition cursor-pointer"
+                        title="Delete deck"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Deck Title & Summary */}
@@ -466,79 +523,42 @@ export const DashboardView: React.FC = () => {
         )}
       </section>
 
-      {/* Floating Practice Station Button (Bottom Right) */}
-      <button
-        id="floating-practice-btn"
-        onClick={() => setShowQuickPracticeModal(true)}
-        className="fixed bottom-20 right-5 z-40 w-13 h-13 rounded-full bg-[#0A1931] hover:bg-[#1B2A4A] text-white flex items-center justify-center shadow-xl shadow-[#0A1931]/25 transition hover:scale-105 active:scale-95 cursor-pointer border-2 border-white"
-        title="Quick Practice Station"
-      >
-        <Brain className="w-6 h-6 stroke-[2]" />
-      </button>
-
-      {/* Modal: Quick Practice */}
-      {showQuickPracticeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+      {/* Delete Confirmation Modal */}
+      {deckToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full border border-slate-200 shadow-2xl space-y-4 animate-in zoom-in-95 text-[#0A1931]">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Brain className="w-5 h-5 text-[#0A1931]" />
-                <h3 className="font-extrabold text-base text-[#0A1931]">Practice Station</h3>
-              </div>
-              <button
-                onClick={() => setShowQuickPracticeModal(false)}
-                className="text-slate-400 hover:text-[#0A1931] text-xs font-bold cursor-pointer"
-              >
-                ✕
-              </button>
+            <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto border border-red-100">
+              <Trash2 className="w-6 h-6" />
             </div>
-            <p className="text-xs text-[#1B2A4A]/70">
-              Select a learning format to drill and retain your uploaded decks:
-            </p>
-            <div className="space-y-2">
+            <div className="text-center space-y-1">
+              <h3 className="font-extrabold text-base text-[#0A1931]">Delete Study Deck?</h3>
+              <p className="text-xs text-[#1B2A4A]/70">
+                Are you sure you want to delete <span className="font-bold text-[#0A1931]">"{deckToDelete.title}"</span>? This action cannot be undone.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5 pt-2">
               <button
-                onClick={() => {
-                  setShowQuickPracticeModal(false);
-                  setActiveTab("memorise");
-                }}
-                className="w-full p-3 rounded-xl border border-slate-200 hover:border-[#0A1931] hover:bg-slate-50 flex items-center gap-3 transition text-left cursor-pointer"
+                onClick={() => setDeckToDelete(null)}
+                className="py-2.5 px-4 rounded-xl border border-slate-200 text-xs font-bold text-[#0A1931] hover:bg-slate-50 transition cursor-pointer"
               >
-                <Brain className="w-5 h-5 text-[#0A1931] shrink-0" />
-                <div>
-                  <p className="text-xs font-bold text-[#0A1931]">Flashcards & Recall</p>
-                  <p className="text-[11px] text-[#1B2A4A]/60">Spaced repetition memory training</p>
-                </div>
+                Cancel
               </button>
-
               <button
-                onClick={() => {
-                  setShowQuickPracticeModal(false);
-                  setActiveTab("quizzes");
-                }}
-                className="w-full p-3 rounded-xl border border-slate-200 hover:border-[#0A1931] hover:bg-slate-50 flex items-center gap-3 transition text-left cursor-pointer"
+                onClick={handleConfirmDelete}
+                className="py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-sm cursor-pointer"
               >
-                <HelpCircle className="w-5 h-5 text-[#0A1931] shrink-0" />
-                <div>
-                  <p className="text-xs font-bold text-[#0A1931]">Diagnostic Quizzes</p>
-                  <p className="text-[11px] text-[#1B2A4A]/60">Multiple choice & conceptual checks</p>
-                </div>
-              </button>
-
-              <button
-                onClick={() => {
-                  setShowQuickPracticeModal(false);
-                  setActiveTab("learn");
-                }}
-                className="w-full p-3 rounded-xl border border-slate-200 hover:border-[#0A1931] hover:bg-slate-50 flex items-center gap-3 transition text-left cursor-pointer"
-              >
-                <Sparkles className="w-5 h-5 text-[#0A1931] shrink-0" />
-                <div>
-                  <p className="text-xs font-bold text-[#0A1931]">Step-by-Step Lessons</p>
-                  <p className="text-[11px] text-[#1B2A4A]/60">Guided breakdown of your material</p>
-                </div>
+                Delete Deck
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-[#0A1931] text-white px-4 py-2.5 rounded-2xl shadow-xl text-xs font-bold flex items-center gap-2 border border-slate-700 animate-in fade-in slide-in-from-top-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
         </div>
       )}
     </div>

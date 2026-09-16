@@ -24,6 +24,7 @@ import {
   Settings,
   HelpCircle as SupportIcon,
   Clock,
+  MessageSquare,
 } from "lucide-react";
 import { StudyMaterial } from "../types";
 
@@ -62,6 +63,7 @@ export const Sidebar: React.FC = () => {
     clearAllCourses,
     materials,
     user,
+    setIsPracticeStationModalOpen,
   } = useStudy();
 
   const handleSelectTab = (tab: ActiveTab) => {
@@ -125,16 +127,47 @@ export const Sidebar: React.FC = () => {
 
           {/* Drawer Panel */}
           <aside className="relative w-80 max-w-[88vw] bg-white h-full shadow-2xl flex flex-col z-10 border-r border-slate-200 text-[#0A1931] animate-in slide-in-from-left duration-200">
-            {/* Header: Profile & Account Information */}
-            <div className="p-4 bg-white border-b border-slate-200 flex items-center justify-between">
+            {/* Top Brand Bar: Boldly written StudyMate */}
+            <div className="px-5 py-4 bg-[#0A1931] text-white flex items-center justify-between">
+              <div
+                className="flex items-center gap-2.5 cursor-pointer select-none"
+                onClick={() => {
+                  setActiveTab("dashboard");
+                  setIsSidebarOpen(false);
+                }}
+              >
+                <img
+                  src="/studymate_logo.jpg"
+                  alt="StudyMate Logo"
+                  referrerPolicy="no-referrer"
+                  className="w-9 h-9 rounded-xl object-cover border border-white/20 shadow-xs shrink-0"
+                />
+                <h2 className="text-2xl font-black tracking-tight text-white">
+                  StudyMate
+                </h2>
+              </div>
+
+              <button
+                id="sidebar-close-btn"
+                onClick={() => setIsSidebarOpen(false)}
+                className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer"
+                title="Close menu"
+              >
+                <X className="w-5 h-5 stroke-[2.5]" />
+              </button>
+            </div>
+
+            {/* Profile & Account Information */}
+            <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <img
-                    src="/study_mascot.jpg"
-                    alt="Learner Avatar"
-                    className="w-10 h-10 rounded-full object-cover border-2 border-slate-200 shadow-xs"
+                    src={user.avatar || "/studymate_logo.jpg"}
+                    alt={user.name || "Learner Avatar"}
+                    referrerPolicy="no-referrer"
+                    className="w-10 h-10 rounded-xl object-cover border border-slate-300 shadow-2xs"
                   />
-                  <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white" />
+                  <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white" />
                 </div>
                 <div>
                   <h3 className="font-extrabold text-sm text-[#0A1931] leading-tight">
@@ -153,12 +186,13 @@ export const Sidebar: React.FC = () => {
               </div>
 
               <button
-                id="sidebar-close-btn"
-                onClick={() => setIsSidebarOpen(false)}
-                className="w-8 h-8 rounded-xl hover:bg-slate-100 text-[#0A1931] flex items-center justify-center transition cursor-pointer"
-                title="Close menu"
+                onClick={() => {
+                  setActiveTab("profile");
+                  setIsSidebarOpen(false);
+                }}
+                className="text-xs font-bold text-[#0A1931] hover:underline cursor-pointer"
               >
-                <X className="w-5 h-5 stroke-[2.2]" />
+                Profile
               </button>
             </div>
 
@@ -278,6 +312,25 @@ export const Sidebar: React.FC = () => {
                 <div className="px-1 pb-1 text-[11px] font-bold text-[#0A1931] uppercase tracking-wider">
                   Menu
                 </div>
+
+                {/* Practice Station Drill Station Button */}
+                <button
+                  id="sidebar-nav-practice-station"
+                  onClick={() => {
+                    setIsPracticeStationModalOpen(true);
+                    setIsSidebarOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-blue-50/80 hover:bg-blue-100/80 text-[#0A1931] border border-blue-200/80 transition text-left cursor-pointer mb-1"
+                >
+                  <div className="flex items-center gap-3">
+                    <Brain className="w-4 h-4 text-blue-600 stroke-[2.2]" />
+                    <span className="font-extrabold text-[#0A1931]">Practice Station</span>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white shadow-2xs">
+                    Drills
+                  </span>
+                </button>
+
                 {mainNavItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = activeTab === item.tab;
@@ -339,7 +392,7 @@ export const Sidebar: React.FC = () => {
                 }}
                 className="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-[#0A1931] text-xs font-semibold transition flex items-center justify-center gap-2 cursor-pointer"
               >
-                <Sparkles className="w-3.5 h-3.5 text-[#0A1931]" />
+                <MessageSquare className="w-3.5 h-3.5 text-[#0A1931]" />
                 <span>Ask StudyMate AI Tutor</span>
               </button>
 

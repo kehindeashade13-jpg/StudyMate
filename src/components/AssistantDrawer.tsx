@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useStudy } from "../context/StudyContext";
 import {
   X,
+  MessageSquare,
   Sparkles,
   Send,
   Lightbulb,
@@ -108,7 +109,7 @@ export const AssistantDrawer: React.FC = () => {
         <div className="p-4 border-b border-slate-800 bg-slate-900/90 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow">
-              <Sparkles className="w-4 h-4 text-white" />
+              <MessageSquare className="w-4 h-4 text-white" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-1.5">

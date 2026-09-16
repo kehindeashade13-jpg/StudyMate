@@ -79,21 +79,34 @@ export const StudyPlanView: React.FC = () => {
           <div className="max-w-md mx-auto space-y-4 text-left p-6 rounded-2xl bg-[#F8F7F4] border border-[#EAE8E0]">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Target Subject
+                Target Subject / Course
               </label>
-              <select
+              <input
+                type="text"
                 value={targetSubject}
-                onChange={(e) => setTargetSubject(e.target.value as StudySubject)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {["Biology", "Mathematics", "Chemistry", "Physics", "History", "Computer Science", "Business"].map(
+                onChange={(e) => setTargetSubject(e.target.value)}
+                placeholder="e.g. Molecular Biology, AP Calculus, Organic Chemistry..."
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                <span className="text-[11px] text-slate-500 font-medium">Quick suggestions:</span>
+                {["Biology", "Mathematics", "Chemistry", "Physics", "Computer Science", "History", "Business"].map(
                   (s) => (
-                    <option key={s} value={s}>
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setTargetSubject(s)}
+                      className={`text-[11px] px-2 py-0.5 rounded-md border transition cursor-pointer ${
+                        targetSubject === s
+                          ? "bg-blue-600 text-white border-blue-600 font-bold"
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
                       {s}
-                    </option>
+                    </button>
                   )
                 )}
-              </select>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -258,19 +271,15 @@ export const StudyPlanView: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label className="block text-[11px] text-slate-400 font-semibold mb-1">
-              Subject
+              Target Subject / Course
             </label>
-            <select
+            <input
+              type="text"
               value={targetSubject}
-              onChange={(e) => setTargetSubject(e.target.value as StudySubject)}
-              className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white"
-            >
-              <option value="Biology">Biology</option>
-              <option value="Mathematics">Mathematics</option>
-              <option value="Chemistry">Chemistry</option>
-              <option value="Physics">Physics</option>
-              <option value="Computer Science">Computer Science</option>
-            </select>
+              onChange={(e) => setTargetSubject(e.target.value)}
+              placeholder="e.g. Molecular Biology"
+              className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
 
           <div>

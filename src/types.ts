@@ -8,7 +8,8 @@ export type StudySubject =
   | "English"
   | "Business"
   | "Psychology"
-  | "Other";
+  | "Other"
+  | (string & {});
 
 export type SourceType =
   | "upload"
@@ -23,6 +24,7 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
+  phoneNumber?: string;
   avatar: string;
   bio: string;
   educationLevel: string;

@@ -10,6 +10,7 @@ import {
   StepLesson,
   StudyPlan,
   StudyGroup,
+  GroupMember,
   GroupMessage,
   StudyFriend,
   NotificationItem,
@@ -102,6 +103,7 @@ interface StudyContextType {
   activeGroup: StudyGroup | null;
   setActiveGroup: (group: StudyGroup | null) => void;
   createStudyGroup: (groupData: Partial<StudyGroup>) => void;
+  addMemberToGroup: (groupId: string, member: GroupMember) => void;
   groupMessages: Record<string, GroupMessage[]>;
   sendGroupMessage: (groupId: string, text: string, isAi?: boolean) => void;
   togglePinMessage: (groupId: string, messageId: string) => void;
@@ -110,6 +112,8 @@ interface StudyContextType {
   // Friends
   friends: StudyFriend[];
   sendFriendRequest: (friendId: string) => void;
+  addFriend: (friendData: Omit<StudyFriend, "id"> | Partial<StudyFriend>) => void;
+  removeFriend: (friendId: string) => void;
   updatePrivacySettings: (settings: { isProfilePublic: boolean; allowFriendRequests: boolean; allowGroupInvites: boolean }) => void;
 
   // Study Plan
@@ -146,6 +150,8 @@ interface StudyContextType {
   setIsSearchOpen: (open: boolean) => void;
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
+  isPracticeStationModalOpen: boolean;
+  setIsPracticeStationModalOpen: (open: boolean) => void;
 }
 
 const StudyContext = createContext<StudyContextType | undefined>(undefined);
@@ -159,7 +165,14 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         localStorage.removeItem("studymate_user");
         return initialUser;
       }
-      return saved ? JSON.parse(saved) : initialUser;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (!parsed.avatar || parsed.avatar.includes("images.unsplash.com")) {
+          parsed.avatar = "/studymate_logo.jpg";
+        }
+        return parsed;
+      }
+      return initialUser;
     } catch {
       return initialUser;
     }
@@ -270,7 +283,17 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [friends, setFriends] = useState<StudyFriend[]>(() => {
     try {
       const saved = localStorage.getItem("studymate_friends");
-      return saved ? JSON.parse(saved) : initialFriends;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(
+            (f: any) =>
+              !["John Miller", "Aisha Patel", "Liam O'Connor", "Liam o' Connor"].includes(f?.name) &&
+              !["friend-1", "friend-2", "friend-3"].includes(f?.id)
+          );
+        }
+      }
+      return initialFriends;
     } catch {
       return initialFriends;
     }
@@ -326,6 +349,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isPracticeStationModalOpen, setIsPracticeStationModalOpen] = useState(false);
 
   const openAddMaterialModal = (type: SourceType = "upload", query = "") => {
     setInitialImportType(type);
@@ -660,6 +684,33 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     triggerConfetti();
   };
 
+  const addMemberToGroup = (groupId: string, member: GroupMember) => {
+    setStudyGroups((prev) =>
+      prev.map((g) => {
+        if (g.id === groupId) {
+          if (g.members.some((m) => m.id === member.id)) return g;
+          return {
+            ...g,
+            members: [...g.members, member],
+          };
+        }
+        return g;
+      })
+    );
+
+    setActiveGroup((prev) => {
+      if (!prev || prev.id !== groupId) return prev;
+      if (prev.members.some((m) => m.id === member.id)) return prev;
+      return {
+        ...prev,
+        members: [...prev.members, member],
+      };
+    });
+
+    addXP(25, "Added Member to Study Group");
+    triggerConfetti();
+  };
+
   const sendGroupMessage = (groupId: string, text: string, isAi = false) => {
     const newMsg: GroupMessage = {
       id: `msg-${Date.now()}`,
@@ -731,6 +782,28 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       prev.map((f) => (f.id === friendId ? { ...f, status: "pending" } : f))
     );
     addXP(15, "Connected with study partner");
+  };
+
+  const addFriend = (friendData: Omit<StudyFriend, "id"> | Partial<StudyFriend>) => {
+    const newFriend: StudyFriend = {
+      id: `friend-${Date.now()}`,
+      name: friendData.name || "Study Partner",
+      avatar: friendData.avatar || "/studymate_logo.jpg",
+      subjects: friendData.subjects || ["General Studies"],
+      school: friendData.school || "University",
+      interests: friendData.interests || ["Active Recall", "Study Sessions"],
+      goals: friendData.goals || "Collaborating on coursework and exam preparation.",
+      mutualSubjectsCount: 1,
+      status: "connected",
+      ...friendData,
+    };
+    setFriends((prev) => [newFriend, ...prev]);
+    addXP(25, "Added study partner");
+    triggerConfetti();
+  };
+
+  const removeFriend = (friendId: string) => {
+    setFriends((prev) => prev.filter((f) => f.id !== friendId));
   };
 
   const updatePrivacySettings = (settings: {
@@ -859,12 +932,15 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         activeGroup,
         setActiveGroup,
         createStudyGroup,
+        addMemberToGroup,
         groupMessages,
         sendGroupMessage,
         togglePinMessage,
         reactToMessage,
         friends,
         sendFriendRequest,
+        addFriend,
+        removeFriend,
         updatePrivacySettings,
         studyPlan,
         setStudyPlan,
@@ -893,6 +969,8 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setIsSearchOpen,
         isAuthModalOpen,
         setIsAuthModalOpen,
+        isPracticeStationModalOpen,
+        setIsPracticeStationModalOpen,
       }}
     >
       {children}
