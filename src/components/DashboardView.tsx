@@ -117,82 +117,38 @@ export const DashboardView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md sm:max-w-xl mx-auto space-y-5 pb-24 px-1 sm:px-4">
-      {/* Top Header Row */}
-      <header className="flex items-center justify-between pt-1 gap-2">
-        {/* Left Menu Button (Hamburger) & Bold Website Name */}
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <button
-            id="top-menu-btn"
-            onClick={() => setIsSidebarOpen(true)}
-            className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-center text-[#0A1931] hover:bg-slate-50 transition cursor-pointer active:scale-95 shrink-0"
-            title="Open Menu"
-          >
-            <Menu className="w-5 h-5 text-[#0A1931] stroke-[2.2]" />
-          </button>
-          <div
-            onClick={() => setActiveTab("dashboard")}
-            className="flex items-center gap-2 sm:gap-2.5 cursor-pointer select-none min-w-0"
-          >
-            <img
-              src="/studymate_logo.jpg"
-              alt="StudyMate Logo"
-              referrerPolicy="no-referrer"
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover border border-slate-200 shadow-2xs shrink-0"
-            />
-            <span className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-[#0A1931] truncate">
-              StudyMate
-            </span>
-          </div>
-        </div>
-
-        {/* Right Stats Capsule (ONLY user streaks) - Compact so it never covers the website name */}
-        <div
-          onClick={() => setActiveTab("progress")}
-          className="bg-white border border-slate-200 rounded-full px-2.5 sm:px-3 py-1 flex items-center gap-1 sm:gap-1.5 shadow-2xs cursor-pointer hover:bg-slate-50 transition shrink-0 whitespace-nowrap"
-          title={`${user.streakDays || 0} Day Streak`}
-        >
-          <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-500 fill-orange-400 shrink-0" />
-          <span className="font-extrabold text-[11px] sm:text-xs text-[#0A1931]">
-            <span className="sm:hidden">{user.streakDays || 0}d</span>
-            <span className="hidden sm:inline">
-              {user.streakDays || 0} {user.streakDays === 1 ? "day streak" : "days streak"}
-            </span>
-          </span>
-        </div>
-      </header>
-
+    <div className="max-w-md sm:max-w-xl mx-auto space-y-5 pb-24 px-2 sm:px-4 pt-2">
       {/* Hero Greeting with StudyMate Logo */}
-      <section className="flex items-center gap-3.5 sm:gap-4 pt-1 sm:pt-3">
+      <section className="flex items-center gap-3.5 sm:gap-4 pt-1 sm:pt-2">
         {/* Floating StudyMate Logo */}
         <motion.div
-          animate={{ y: [0, -5, 0] }}
+          animate={{ y: [0, -4, 0] }}
           transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
           className="relative shrink-0"
         >
-          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl overflow-hidden shadow-xs border-2 border-slate-200 bg-white p-1.5 flex items-center justify-center">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden shadow-xs border border-slate-200 bg-white p-1 flex items-center justify-center">
             <img
               src="/studymate_logo.jpg"
               alt="StudyMate Logo"
               referrerPolicy="no-referrer"
-              className="w-full h-full object-cover rounded-2xl border border-slate-100 shadow-2xs"
+              className="w-full h-full object-cover rounded-xl shadow-2xs"
             />
           </div>
         </motion.div>
 
         {/* Text Greeting */}
         <div>
-          <p className="text-[#1B2A4A]/70 text-base sm:text-lg font-medium tracking-tight">
+          <p className="text-slate-500 text-sm sm:text-base font-medium tracking-tight">
             What shall we
           </p>
-          <h1 className="text-[#0A1931] text-4xl sm:text-5xl font-black tracking-tight leading-none mt-0.5">
+          <h1 className="text-[#0F172A] text-3xl sm:text-4xl font-black tracking-tight leading-none mt-0.5">
             Study?
           </h1>
         </div>
       </section>
 
-      {/* Study Input & Quick Action Box (White Container with Navy Text) */}
-      <section className="rounded-3xl bg-white border-2 border-slate-200 p-3.5 sm:p-4 space-y-3 shadow-xs">
+      {/* Study Input & Quick Action Box (White Container with Indigo Accent) */}
+      <section className="rounded-2xl bg-white border border-slate-200 p-3.5 sm:p-4 space-y-3 shadow-xs">
         {/* Input Bar */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
@@ -203,23 +159,23 @@ export const DashboardView: React.FC = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleLaunchSearch()}
               placeholder="Study any topic, paste notes, or ask..."
-              className="w-full pl-4 pr-10 py-3.5 rounded-2xl bg-white border border-slate-300 text-sm text-[#0A1931] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0A1931]/20 focus:border-[#0A1931] shadow-2xs transition"
+              className="w-full pl-4 pr-10 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-[#0F172A] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6366F1]/20 focus:border-[#6366F1] shadow-2xs transition"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#0A1931] text-xs font-bold"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#0F172A] text-xs font-bold"
               >
                 ✕
               </button>
             )}
           </div>
 
-          {/* Plus / Action Button */}
+          {/* Plus / Action Button (Rich Indigo #6366F1) */}
           <button
             id="dashboard-search-action-btn"
             onClick={handleLaunchSearch}
-            className="w-12 h-12 rounded-2xl bg-[#0A1931] hover:bg-[#1B2A4A] text-white flex items-center justify-center transition shadow-xs cursor-pointer shrink-0 active:scale-95"
+            className="w-11 h-11 rounded-xl bg-[#6366F1] hover:bg-[#4F46E5] text-white flex items-center justify-center transition shadow-xs cursor-pointer shrink-0 active:scale-95"
             title="Create study set"
           >
             <Plus className="w-5 h-5 stroke-[2.5]" />
@@ -232,48 +188,48 @@ export const DashboardView: React.FC = () => {
           <button
             id="quick-action-upload-btn"
             onClick={() => openAddMaterialModal("upload")}
-            className="py-2 px-1 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 flex flex-col items-center justify-center gap-1 transition shadow-2xs group cursor-pointer active:scale-95"
+            className="py-2 px-1 rounded-xl bg-slate-50 hover:bg-indigo-50/50 border border-slate-200 hover:border-indigo-200 flex flex-col items-center justify-center gap-1 transition shadow-2xs group cursor-pointer active:scale-95"
           >
-            <div className="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-slate-200 flex items-center justify-center text-[#0A1931] transition">
+            <div className="w-7 h-7 rounded-lg bg-white group-hover:bg-[#6366F1] group-hover:text-white flex items-center justify-center text-[#6366F1] transition shadow-2xs">
               <ArrowUp className="w-4 h-4 stroke-[2.5]" />
             </div>
-            <span className="text-[11px] font-bold text-[#0A1931]">Upload</span>
+            <span className="text-[11px] font-bold text-[#0F172A]">Upload</span>
           </button>
 
           {/* Photo Button */}
           <button
             id="quick-action-photo-btn"
             onClick={() => openAddMaterialModal("photo")}
-            className="py-2 px-1 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 flex flex-col items-center justify-center gap-1 transition shadow-2xs group cursor-pointer active:scale-95"
+            className="py-2 px-1 rounded-xl bg-slate-50 hover:bg-indigo-50/50 border border-slate-200 hover:border-indigo-200 flex flex-col items-center justify-center gap-1 transition shadow-2xs group cursor-pointer active:scale-95"
           >
-            <div className="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-slate-200 flex items-center justify-center text-[#0A1931] transition">
+            <div className="w-7 h-7 rounded-lg bg-white group-hover:bg-[#6366F1] group-hover:text-white flex items-center justify-center text-[#6366F1] transition shadow-2xs">
               <Camera className="w-4 h-4 stroke-[2.2]" />
             </div>
-            <span className="text-[11px] font-bold text-[#0A1931]">Photo</span>
+            <span className="text-[11px] font-bold text-[#0F172A]">Photo</span>
           </button>
 
           {/* YouTube Button */}
           <button
             id="quick-action-youtube-btn"
             onClick={() => openAddMaterialModal("youtube")}
-            className="py-2 px-1 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 flex flex-col items-center justify-center gap-1 transition shadow-2xs group cursor-pointer active:scale-95"
+            className="py-2 px-1 rounded-xl bg-slate-50 hover:bg-red-50/50 border border-slate-200 hover:border-red-200 flex flex-col items-center justify-center gap-1 transition shadow-2xs group cursor-pointer active:scale-95"
           >
-            <div className="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-slate-200 flex items-center justify-center text-red-600 transition">
-              <Play className="w-4 h-4 fill-red-600" />
+            <div className="w-7 h-7 rounded-lg bg-white group-hover:bg-red-600 group-hover:text-white flex items-center justify-center text-red-600 transition shadow-2xs">
+              <Play className="w-4 h-4 fill-current" />
             </div>
-            <span className="text-[11px] font-bold text-[#0A1931]">YouTube</span>
+            <span className="text-[11px] font-bold text-[#0F172A]">YouTube</span>
           </button>
 
           {/* Paste Button */}
           <button
             id="quick-action-paste-btn"
             onClick={() => openAddMaterialModal("paste")}
-            className="py-2 px-1 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 flex flex-col items-center justify-center gap-1 transition shadow-2xs group cursor-pointer active:scale-95"
+            className="py-2 px-1 rounded-xl bg-slate-50 hover:bg-indigo-50/50 border border-slate-200 hover:border-indigo-200 flex flex-col items-center justify-center gap-1 transition shadow-2xs group cursor-pointer active:scale-95"
           >
-            <div className="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-slate-200 flex items-center justify-center text-[#0A1931] transition">
+            <div className="w-7 h-7 rounded-lg bg-white group-hover:bg-[#6366F1] group-hover:text-white flex items-center justify-center text-[#6366F1] transition shadow-2xs">
               <FileText className="w-4 h-4 stroke-[2.2]" />
             </div>
-            <span className="text-[11px] font-bold text-[#0A1931]">Paste</span>
+            <span className="text-[11px] font-bold text-[#0F172A]">Paste</span>
           </button>
         </div>
 

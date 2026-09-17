@@ -55,6 +55,8 @@ export interface StudyMaterial {
   subject: StudySubject;
   sourceType: SourceType;
   sourceUrl?: string;
+  fileUrl?: string;
+  storagePath?: string;
   rawText: string;
   summary: string;
   dateAdded: string;
