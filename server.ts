@@ -42,6 +42,48 @@ function cleanJsonResponse(raw: string): any {
   return JSON.parse(cleaned.trim());
 }
 
+// Resilient candidate models with automatic failover to prevent 503 high-demand errors
+const CANDIDATE_MODELS = [
+  "gemini-flash-latest",
+  "gemini-2.5-flash",
+  "gemini-3.8-flash",
+];
+
+async function generateContentWithRetry(
+  ai: GoogleGenAI,
+  params: {
+    contents: any;
+    config?: any;
+    preferredModel?: string;
+  }
+): Promise<any> {
+  const modelsToTry = params.preferredModel
+    ? [params.preferredModel, ...CANDIDATE_MODELS.filter((m) => m !== params.preferredModel)]
+    : CANDIDATE_MODELS;
+
+  let lastError: any = null;
+
+  for (const model of modelsToTry) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: params.contents,
+        config: params.config,
+      });
+      return response;
+    } catch (err: any) {
+      lastError = err;
+      const status = err?.status || err?.code || (err?.message?.includes("503") ? 503 : null);
+      console.warn(
+        `[Gemini API] Model ${model} encountered ${status || err?.message}. Failing over to next available model...`
+      );
+      // Brief pause before trying next candidate
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    }
+  }
+  throw lastError || new Error("All candidate Gemini models failed");
+}
+
 // 1. Analyze study material endpoint
 app.post("/api/gemini/analyze", async (req, res) => {
   const { title, content, sourceType } = req.body;
@@ -102,8 +144,7 @@ Return ONLY a valid JSON object with the following structure:
   ]
 }`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+      const response = await generateContentWithRetry(ai, {
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -287,8 +328,7 @@ Return ONLY a single valid JSON object:
   ]
 }`;
 
-      const aiPromise = ai.models.generateContent({
-        model: "gemini-3.8-flash",
+      const aiPromise = generateContentWithRetry(ai, {
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -296,9 +336,9 @@ Return ONLY a single valid JSON object:
         },
       });
 
-      // 12-second timeout to prevent stalling
+      // 25-second timeout to allow resilient multi-model failover
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("AI generation timeout")), 12000)
+        setTimeout(() => reject(new Error("AI generation timeout")), 25000)
       );
 
       const response: any = await Promise.race([aiPromise, timeoutPromise]);
@@ -553,8 +593,7 @@ Return ONLY a JSON object:
   "quickRecap": string[]
 }`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+      const response = await generateContentWithRetry(ai, {
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -715,8 +754,7 @@ Return ONLY a JSON object:
   ]
 }`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+      const response = await generateContentWithRetry(ai, {
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -857,8 +895,7 @@ Return ONLY a JSON object:
   ]
 }`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+      const response = await generateContentWithRetry(ai, {
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -995,8 +1032,7 @@ Return ONLY a JSON object:
   ]
 }`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+      const response = await generateContentWithRetry(ai, {
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -1179,8 +1215,7 @@ Return ONLY a JSON object:
   ]
 }`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+      const response = await generateContentWithRetry(ai, {
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -1304,13 +1339,12 @@ When a student asks for an explanation, explain clearly with intuitive analogies
 When in a study group chat, keep responses friendly, collaborative, and student-focused.
 If study material is provided, ground your answers in the material.`;
 
-      let contents = prompt;
+      let contents: any = prompt;
       if (currentMaterial) {
         contents = `[CURRENT STUDY MATERIAL CONTEXT: Title: "${currentMaterial.title || "Untitled"}", Subject: "${currentMaterial.subject || "General"}"\nExcerpt: "${(currentMaterial.content || "").slice(0, 3000)}"]\n\nStudent question: ${prompt}`;
       }
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+      const response = await generateContentWithRetry(ai, {
         contents,
         config: {
           systemInstruction,
@@ -1375,8 +1409,7 @@ app.post("/api/gemini/ocr-extract", async (req, res) => {
 
   if (ai && imageBase64) {
     try {
-      const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+      const response = await generateContentWithRetry(ai, {
         contents: {
           parts: [
             {
@@ -1444,8 +1477,7 @@ Return ONLY a JSON object:
   "keyTakeaways": string[]
 }`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+      const response = await generateContentWithRetry(ai, {
         contents: prompt,
         config: {
           responseMimeType: "application/json",

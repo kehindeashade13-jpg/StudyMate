@@ -381,12 +381,53 @@ export async function fetchMaterialsFromSupabase() {
  */
 export function getSupabaseTablesSql() {
   return `
--- 1. Create Storage Bucket for study materials (in Supabase Dashboard > Storage):
--- Insert into storage.buckets (id, name, public) VALUES ('study-materials', 'study-materials', true);
+-- ==============================================================================
+-- STUDYMATE DATABASE SCHEMA (Supabase / PostgreSQL)
+-- ==============================================================================
 
--- 2. Study Materials Table
+-- 1. Storage Bucket for uploaded files (PDFs, Images, Audio, Docs)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('study-materials', 'study-materials', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage Bucket Policies (Allow public reads and uploads)
+DROP POLICY IF EXISTS "Public Access" ON storage.objects;
+CREATE POLICY "Public Access"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'study-materials');
+
+DROP POLICY IF EXISTS "Allow Public Uploads" ON storage.objects;
+CREATE POLICY "Allow Public Uploads"
+ON storage.objects FOR INSERT
+WITH CHECK (bucket_id = 'study-materials');
+
+-- 2. User Profiles Table
+CREATE TABLE IF NOT EXISTS public.user_profiles (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT,
+  phone_number TEXT,
+  avatar TEXT,
+  bio TEXT,
+  education_level TEXT,
+  institution TEXT,
+  enrolled_subjects JSONB DEFAULT '[]'::jsonb,
+  study_goals TEXT,
+  study_preference TEXT DEFAULT 'both',
+  xp INT DEFAULT 0,
+  streak_days INT DEFAULT 0,
+  last_active_date DATE DEFAULT CURRENT_DATE,
+  is_profile_public BOOLEAN DEFAULT true,
+  allow_friend_requests BOOLEAN DEFAULT true,
+  allow_group_invites BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. Study Materials Table
 CREATE TABLE IF NOT EXISTS public.study_materials (
   id TEXT PRIMARY KEY,
+  user_id TEXT,
   title TEXT NOT NULL,
   subject TEXT NOT NULL,
   source_type TEXT NOT NULL,
@@ -405,7 +446,7 @@ CREATE TABLE IF NOT EXISTS public.study_materials (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Generated Notes Table
+-- 4. Generated Notes Table
 CREATE TABLE IF NOT EXISTS public.generated_notes (
   id TEXT PRIMARY KEY,
   material_id TEXT REFERENCES public.study_materials(id) ON DELETE CASCADE,
@@ -419,10 +460,13 @@ CREATE TABLE IF NOT EXISTS public.generated_notes (
   formulas JSONB DEFAULT '[]'::jsonb,
   common_mistakes JSONB DEFAULT '[]'::jsonb,
   quick_recap JSONB DEFAULT '[]'::jsonb,
+  user_highlights JSONB DEFAULT '[]'::jsonb,
+  personal_notes TEXT,
+  is_bookmarked BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. Flashcards Table
+-- 5. Flashcards Table
 CREATE TABLE IF NOT EXISTS public.flashcards (
   id TEXT PRIMARY KEY,
   material_id TEXT REFERENCES public.study_materials(id) ON DELETE CASCADE,
@@ -432,8 +476,133 @@ CREATE TABLE IF NOT EXISTS public.flashcards (
   difficulty TEXT DEFAULT 'medium',
   category TEXT DEFAULT 'General',
   review_count INT DEFAULT 0,
+  last_rating TEXT,
+  next_review_date TIMESTAMPTZ,
   mastered BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- 6. Quizzes Table
+CREATE TABLE IF NOT EXISTS public.quizzes (
+  id TEXT PRIMARY KEY,
+  material_id TEXT REFERENCES public.study_materials(id) ON DELETE CASCADE,
+  quiz_title TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  questions JSONB DEFAULT '[]'::jsonb,
+  best_score NUMERIC DEFAULT 0,
+  attempts_count INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 7. Quiz Attempts Table
+CREATE TABLE IF NOT EXISTS public.quiz_attempts (
+  id TEXT PRIMARY KEY,
+  quiz_id TEXT REFERENCES public.quizzes(id) ON DELETE CASCADE,
+  user_id TEXT,
+  date TIMESTAMPTZ DEFAULT NOW(),
+  score INT NOT NULL,
+  total_questions INT NOT NULL,
+  user_answers JSONB DEFAULT '{}'::jsonb,
+  wrong_question_ids JSONB DEFAULT '[]'::jsonb,
+  weak_topics JSONB DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8. Step-by-Step Lessons Table
+CREATE TABLE IF NOT EXISTS public.step_lessons (
+  id TEXT PRIMARY KEY,
+  material_id TEXT REFERENCES public.study_materials(id) ON DELETE CASCADE,
+  subject TEXT NOT NULL,
+  title TEXT NOT NULL,
+  total_lessons INT DEFAULT 0,
+  current_step_index INT DEFAULT 0,
+  lessons JSONB DEFAULT '[]'::jsonb,
+  is_finished BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 9. Study Groups Table
+CREATE TABLE IF NOT EXISTS public.study_groups (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  description TEXT,
+  is_private BOOLEAN DEFAULT false,
+  exam_date DATE,
+  progress_percent INT DEFAULT 0,
+  members JSONB DEFAULT '[]'::jsonb,
+  shared_material_ids JSONB DEFAULT '[]'::jsonb,
+  pinned_message TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 10. Group Messages Table
+CREATE TABLE IF NOT EXISTS public.group_messages (
+  id TEXT PRIMARY KEY,
+  group_id TEXT REFERENCES public.study_groups(id) ON DELETE CASCADE,
+  sender_id TEXT NOT NULL,
+  sender_name TEXT NOT NULL,
+  sender_avatar TEXT,
+  text TEXT NOT NULL,
+  is_ai BOOLEAN DEFAULT false,
+  reply_to_id TEXT,
+  reactions JSONB DEFAULT '{}'::jsonb,
+  attachments JSONB DEFAULT '[]'::jsonb,
+  is_pinned BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 11. Notifications Table
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id TEXT PRIMARY KEY,
+  user_id TEXT,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  is_read BOOLEAN DEFAULT false,
+  action_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_materials_created_at ON public.study_materials(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_materials_subject ON public.study_materials(subject);
+CREATE INDEX IF NOT EXISTS idx_notes_material_id ON public.generated_notes(material_id);
+CREATE INDEX IF NOT EXISTS idx_flashcards_material_id ON public.flashcards(material_id);
+CREATE INDEX IF NOT EXISTS idx_quizzes_material_id ON public.quizzes(material_id);
+CREATE INDEX IF NOT EXISTS idx_group_messages_group ON public.group_messages(group_id, created_at ASC);
+
+-- Row Level Security (RLS)
+ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.study_materials ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.generated_notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.flashcards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quizzes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quiz_attempts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.step_lessons ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.study_groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.group_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+-- Permissive policies for anon / authenticated roles
+DO $$
+DECLARE
+  tbl text;
+BEGIN
+  FOR tbl IN
+    SELECT tablename FROM pg_tables
+    WHERE schemaname = 'public'
+    AND tablename IN (
+      'user_profiles', 'study_materials', 'generated_notes',
+      'flashcards', 'quizzes', 'quiz_attempts', 'step_lessons',
+      'study_groups', 'group_messages', 'notifications'
+    )
+  LOOP
+    EXECUTE format('
+      DROP POLICY IF EXISTS "Public full access %I" ON public.%I;
+      CREATE POLICY "Public full access %I" ON public.%I FOR ALL USING (true) WITH CHECK (true);
+    ', tbl, tbl, tbl, tbl);
+  END LOOP;
+END $$;
 `;
 }

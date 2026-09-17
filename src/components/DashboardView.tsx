@@ -21,6 +21,16 @@ import {
   Trash2,
   Layers,
   Share2,
+  Clock,
+  Image as ImageIcon,
+  FileUp,
+  Eye,
+  X,
+  Copy,
+  Check,
+  Video,
+  Mic,
+  Maximize2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { SourceType, StudyMaterial } from "../types";
@@ -46,6 +56,53 @@ export const DashboardView: React.FC = () => {
   const [showQuickPracticeModal, setShowQuickPracticeModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deckToDelete, setDeckToDelete] = useState<StudyMaterial | null>(null);
+  const [recentFilter, setRecentFilter] = useState<"all" | "files" | "photos" | "videos" | "notes">("all");
+  const [previewingMaterial, setPreviewingMaterial] = useState<StudyMaterial | null>(null);
+  const [copiedPreviewText, setCopiedPreviewText] = useState(false);
+
+  // Helper for relative time formatting
+  const formatRelativeTime = (dateStr?: string) => {
+    if (!dateStr) return "Recently";
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return dateStr;
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 1) return "Just now";
+      if (diffMins < 60) return `${diffMins}m ago`;
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) return `${diffHours}h ago`;
+      const diffDays = Math.floor(diffHours / 24);
+      if (diffDays === 1) return "Yesterday";
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    } catch {
+      return "Recently";
+    }
+  };
+
+  // Helper for source type meta
+  const getSourceTypeDisplay = (type: SourceType) => {
+    switch (type) {
+      case "photo":
+        return { label: "Photo / Scan", icon: Camera, color: "bg-purple-100 text-purple-800 border-purple-200" };
+      case "upload":
+        return { label: "Uploaded File", icon: FileUp, color: "bg-blue-100 text-blue-800 border-blue-200" };
+      case "youtube":
+        return { label: "YouTube Video", icon: Video, color: "bg-red-100 text-red-800 border-red-200" };
+      case "record":
+        return { label: "Voice / Audio", icon: Mic, color: "bg-emerald-100 text-emerald-800 border-emerald-200" };
+      case "deck":
+        return { label: "Slide Deck", icon: Layers, color: "bg-amber-100 text-amber-800 border-amber-200" };
+      case "paste":
+        return { label: "Pasted Notes", icon: FileText, color: "bg-indigo-100 text-indigo-800 border-indigo-200" };
+      case "quizlet":
+        return { label: "Quizlet / Anki", icon: Brain, color: "bg-cyan-100 text-cyan-800 border-cyan-200" };
+      default:
+        return { label: "Study Material", icon: FileText, color: "bg-slate-100 text-slate-800 border-slate-200" };
+    }
+  };
 
   // Handle launching modal from query
   const handleLaunchSearch = () => {
@@ -115,6 +172,23 @@ export const DashboardView: React.FC = () => {
         return { color: "text-slate-700 bg-slate-100 border-slate-200", emoji: "📚" };
     }
   };
+
+  // Sort materials by date descending (newest uploads first)
+  const sortedRecentMaterials = [...materials].sort((a, b) => {
+    const timeA = a.dateAdded ? new Date(a.dateAdded).getTime() : 0;
+    const timeB = b.dateAdded ? new Date(b.dateAdded).getTime() : 0;
+    return timeB - timeA;
+  });
+
+  // Filter based on selected recent category tab
+  const filteredRecentMaterials = sortedRecentMaterials.filter((mat) => {
+    if (recentFilter === "all") return true;
+    if (recentFilter === "files") return mat.sourceType === "upload" || mat.sourceType === "deck";
+    if (recentFilter === "photos") return mat.sourceType === "photo" || !!mat.fileUrl;
+    if (recentFilter === "videos") return mat.sourceType === "youtube";
+    if (recentFilter === "notes") return mat.sourceType === "paste" || mat.sourceType === "record" || mat.sourceType === "quizlet";
+    return true;
+  });
 
   return (
     <div className="max-w-md sm:max-w-xl mx-auto space-y-5 pb-24 px-2 sm:px-4 pt-2">
@@ -478,6 +552,427 @@ export const DashboardView: React.FC = () => {
           </div>
         )}
       </section>
+
+      {/* "Recent" Section — Files, Photos & Uploaded Study Materials */}
+      <section className="space-y-3 pt-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-[#6366F1]">
+              <Clock className="w-3.5 h-3.5" />
+            </div>
+            <h2 className="text-[#0A1931] font-extrabold text-lg">Recent</h2>
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-[#0A1931] border border-slate-200">
+              {materials.length}
+            </span>
+          </div>
+
+          {/* Filter Chips */}
+          {materials.length > 0 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+              {[
+                { id: "all", label: "All" },
+                { id: "files", label: "Files & Docs" },
+                { id: "photos", label: "Photos & Scans" },
+                { id: "videos", label: "Videos" },
+                { id: "notes", label: "Notes & Audio" },
+              ].map((filter) => {
+                const isActive = recentFilter === filter.id;
+                return (
+                  <button
+                    key={filter.id}
+                    onClick={() => setRecentFilter(filter.id as any)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-bold transition shrink-0 cursor-pointer ${
+                      isActive
+                        ? "bg-[#0A1931] text-white shadow-2xs"
+                        : "bg-white text-[#0A1931] border border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    {filter.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* List of Recent Items */}
+        {sortedRecentMaterials.length > 0 ? (
+          filteredRecentMaterials.length > 0 ? (
+            <div className="space-y-3">
+              {filteredRecentMaterials.map((mat) => {
+                const meta = getSubjectMeta(mat.subject);
+                const sourceMeta = getSourceTypeDisplay(mat.sourceType);
+                const SourceIcon = sourceMeta.icon;
+                const isPhoto = mat.sourceType === "photo" || !!mat.fileUrl;
+                const timeAgo = formatRelativeTime(mat.dateAdded);
+
+                return (
+                  <div
+                    key={`recent-${mat.id}`}
+                    className="p-3.5 sm:p-4 rounded-2xl bg-white border border-slate-200 shadow-xs hover:shadow-md transition-all space-y-3 text-[#0A1931] group"
+                  >
+                    {/* Top row: Thumbnail / Icon + Title & Meta Info */}
+                    <div className="flex items-start gap-3">
+                      {/* Media Preview Box */}
+                      {mat.fileUrl ? (
+                        <div
+                          onClick={() => setPreviewingMaterial(mat)}
+                          className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0 cursor-pointer group/thumb shadow-2xs"
+                          title="Click to preview file/photo"
+                        >
+                          <img
+                            src={mat.fileUrl}
+                            alt={mat.title}
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-200"
+                          />
+                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center text-white">
+                            <Maximize2 className="w-4 h-4" />
+                          </div>
+                          <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/70 text-white text-[9px] font-bold">
+                            Photo
+                          </span>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => setPreviewingMaterial(mat)}
+                          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-xl border flex flex-col items-center justify-center shrink-0 shadow-2xs cursor-pointer transition ${
+                            isPhoto
+                              ? "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
+                              : mat.sourceType === "upload" || mat.sourceType === "deck"
+                              ? "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                              : mat.sourceType === "youtube"
+                              ? "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+                              : mat.sourceType === "record"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                              : "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100"
+                          }`}
+                          title="Click to view details"
+                        >
+                          <SourceIcon className="w-6 h-6" />
+                          <span className="text-[9px] font-bold uppercase mt-0.5 tracking-tight">
+                            {mat.sourceType === "upload" ? "FILE" : mat.sourceType === "photo" ? "PHOTO" : mat.sourceType}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Info & Meta Details */}
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {/* Subject Badge */}
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${meta.color}`}
+                            >
+                              <span>{meta.emoji}</span>
+                              <span>{mat.subject}</span>
+                            </span>
+
+                            {/* Source Format Badge */}
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${sourceMeta.color}`}
+                            >
+                              <SourceIcon className="w-3 h-3" />
+                              <span>{sourceMeta.label}</span>
+                            </span>
+                          </div>
+
+                          {/* Relative timestamp */}
+                          <div className="flex items-center gap-1 text-[11px] text-slate-400 shrink-0 font-medium">
+                            <Clock className="w-3 h-3" />
+                            <span>{timeAgo}</span>
+                          </div>
+                        </div>
+
+                        {/* Title */}
+                        <h3
+                          onClick={() => handleOpenMaterialMode(mat, "learn")}
+                          className="font-extrabold text-sm sm:text-base text-[#0A1931] hover:text-[#6366F1] transition cursor-pointer leading-snug line-clamp-1"
+                        >
+                          {mat.title}
+                        </h3>
+
+                        {/* Excerpt / Summary */}
+                        <p className="text-xs text-[#1B2A4A]/70 line-clamp-1 leading-relaxed">
+                          {mat.summary || (mat.rawText ? mat.rawText.slice(0, 140) : "Uploaded study material ready for active recall practice.")}
+                        </p>
+
+                        {/* Metrics Pills */}
+                        <div className="flex items-center gap-2 pt-0.5 text-[11px] font-semibold text-slate-500 flex-wrap">
+                          <span className="flex items-center gap-1 text-[#0A1931]">
+                            <Brain className="w-3 h-3 text-[#6366F1]" />
+                            <span>{mat.definitions?.length || 10} flashcards</span>
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1 text-[#0A1931]">
+                            <HelpCircle className="w-3 h-3 text-emerald-600" />
+                            <span>{mat.potentialExamQuestions?.length || 5} questions</span>
+                          </span>
+                          {mat.chunks && mat.chunks.length > 0 && (
+                            <>
+                              <span>•</span>
+                              <span>{mat.chunks.length} sections</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bottom Row: Quick Study Actions */}
+                    <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100 flex-wrap">
+                      <button
+                        onClick={() => handleOpenMaterialMode(mat, "learn")}
+                        className="py-1.5 px-3 rounded-xl bg-[#0A1931] hover:bg-[#1B2A4A] text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <Play className="w-3 h-3 fill-white" />
+                        <span>Study</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleOpenMaterialMode(mat, "memorise")}
+                        className="py-1.5 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#0A1931] text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                      >
+                        <Brain className="w-3 h-3" />
+                        <span>Flashcards</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleOpenMaterialMode(mat, "quizzes")}
+                        className="py-1.5 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#0A1931] text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                      >
+                        <HelpCircle className="w-3 h-3" />
+                        <span>Quiz</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleOpenMaterialMode(mat, "library")}
+                        className="py-1.5 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-[#0A1931] text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                      >
+                        <BookOpen className="w-3 h-3" />
+                        <span>Notes</span>
+                      </button>
+
+                      {/* Preview Full Material / Photo Button */}
+                      <button
+                        onClick={() => setPreviewingMaterial(mat)}
+                        className="py-1.5 px-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-[#6366F1] text-xs font-bold transition flex items-center gap-1 cursor-pointer border border-indigo-100 ml-auto"
+                        title="Preview file / photo & extracted content"
+                      >
+                        <Eye className="w-3 h-3" />
+                        <span>Preview</span>
+                      </button>
+
+                      {/* Delete */}
+                      <button
+                        onClick={(e) => handleDeleteDeck(mat, e)}
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition cursor-pointer"
+                        title="Delete material"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* No items in current filter */
+            <div className="p-6 rounded-2xl bg-white border border-slate-200 text-center space-y-2">
+              <p className="text-xs font-bold text-[#0A1931]">
+                No recent items found under "{recentFilter}".
+              </p>
+              <button
+                onClick={() => setRecentFilter("all")}
+                className="text-xs font-bold text-[#6366F1] hover:underline cursor-pointer"
+              >
+                Reset filter to show all ({materials.length})
+              </button>
+            </div>
+          )
+        ) : (
+          /* Empty State for Recent */
+          <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200 shadow-xs text-center space-y-3 text-[#0A1931]">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center mx-auto text-[#6366F1]">
+              <Clock className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-sm text-[#0A1931]">No recent uploads yet</h3>
+              <p className="text-xs text-[#1B2A4A]/70 max-w-xs mx-auto mt-1 leading-relaxed">
+                Files, scanned photos, YouTube lectures, and notes you upload will appear here in chronological order for fast review.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+              <button
+                onClick={() => openAddMaterialModal("upload")}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-indigo-50 text-[#0A1931] hover:text-[#6366F1] text-xs font-bold transition border border-slate-200 cursor-pointer"
+              >
+                <FileUp className="w-3.5 h-3.5" />
+                <span>Upload File</span>
+              </button>
+              <button
+                onClick={() => openAddMaterialModal("photo")}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-indigo-50 text-[#0A1931] hover:text-[#6366F1] text-xs font-bold transition border border-slate-200 cursor-pointer"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>Take Photo</span>
+              </button>
+              <button
+                onClick={() => openAddMaterialModal("youtube")}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-red-50 text-[#0A1931] hover:text-red-600 text-xs font-bold transition border border-slate-200 cursor-pointer"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>YouTube</span>
+              </button>
+              <button
+                onClick={() => openAddMaterialModal("paste")}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-indigo-50 text-[#0A1931] hover:text-[#6366F1] text-xs font-bold transition border border-slate-200 cursor-pointer"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Paste Notes</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* File & Photo Preview Lightbox Modal */}
+      {previewingMaterial && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-lg w-full border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] text-[#0A1931]">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between gap-3 bg-slate-50/70">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-[#6366F1] shrink-0 shadow-2xs">
+                  {previewingMaterial.sourceType === "photo" || previewingMaterial.fileUrl ? (
+                    <Camera className="w-5 h-5" />
+                  ) : previewingMaterial.sourceType === "upload" ? (
+                    <FileUp className="w-5 h-5" />
+                  ) : (
+                    <FileText className="w-5 h-5" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-extrabold text-sm sm:text-base text-[#0A1931] truncate">
+                    {previewingMaterial.title}
+                  </h3>
+                  <div className="flex items-center gap-2 text-[11px] text-[#1B2A4A]/70">
+                    <span>{previewingMaterial.subject}</span>
+                    <span>•</span>
+                    <span className="capitalize">{previewingMaterial.sourceType}</span>
+                    <span>•</span>
+                    <span>{formatRelativeTime(previewingMaterial.dateAdded)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setPreviewingMaterial(null)}
+                className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-[#0A1931] transition cursor-pointer shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
+              {/* Photo Preview if image exists */}
+              {previewingMaterial.fileUrl && (
+                <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 flex items-center justify-center max-h-72 shadow-2xs">
+                  <img
+                    src={previewingMaterial.fileUrl}
+                    alt={previewingMaterial.title}
+                    referrerPolicy="no-referrer"
+                    className="max-h-72 w-full object-contain"
+                  />
+                </div>
+              )}
+
+              {/* Summary Box */}
+              {previewingMaterial.summary && (
+                <div className="p-3.5 rounded-xl bg-indigo-50/60 border border-indigo-100 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#6366F1]">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>AI Analysis Summary</span>
+                  </div>
+                  <p className="text-xs text-[#0A1931] leading-relaxed">
+                    {previewingMaterial.summary}
+                  </p>
+                </div>
+              )}
+
+              {/* Extracted Raw Content Preview */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#0A1931]">
+                    Extracted Text & Notes
+                  </span>
+                  <button
+                    onClick={() => {
+                      if (previewingMaterial.rawText && navigator?.clipboard?.writeText) {
+                        navigator.clipboard.writeText(previewingMaterial.rawText);
+                        setCopiedPreviewText(true);
+                        setTimeout(() => setCopiedPreviewText(false), 2000);
+                      }
+                    }}
+                    className="text-xs font-bold text-[#6366F1] hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    {copiedPreviewText ? (
+                      <>
+                        <Check className="w-3 h-3 text-emerald-600" />
+                        <span className="text-emerald-600">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3" />
+                        <span>Copy Text</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-700 max-h-48 overflow-y-auto whitespace-pre-wrap leading-relaxed">
+                  {previewingMaterial.rawText || "No raw text available."}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between gap-2">
+              <button
+                onClick={() => setPreviewingMaterial(null)}
+                className="py-2.5 px-4 rounded-xl border border-slate-200 bg-white text-xs font-bold text-[#0A1931] hover:bg-slate-100 transition cursor-pointer"
+              >
+                Close
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const m = previewingMaterial;
+                    setPreviewingMaterial(null);
+                    handleOpenMaterialMode(m, "memorise");
+                  }}
+                  className="py-2.5 px-3 rounded-xl bg-white border border-slate-200 text-xs font-bold text-[#0A1931] hover:bg-slate-100 transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Brain className="w-3.5 h-3.5 text-[#6366F1]" />
+                  <span>Flashcards</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    const m = previewingMaterial;
+                    setPreviewingMaterial(null);
+                    handleOpenMaterialMode(m, "learn");
+                  }}
+                  className="py-2.5 px-4 rounded-xl bg-[#0A1931] hover:bg-[#1B2A4A] text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                >
+                  <Play className="w-3.5 h-3.5 fill-white" />
+                  <span>Start Studying</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {deckToDelete && (
