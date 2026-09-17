@@ -31,6 +31,7 @@ import {
   Video,
   Mic,
   Maximize2,
+  Search,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { SourceType, StudyMaterial } from "../types";
@@ -46,6 +47,7 @@ export const DashboardView: React.FC = () => {
     clearAllCourses,
     deleteMaterial,
     setIsAssistantOpen,
+    setIsSearchOpen,
     studyGroups,
     sendGroupMessage,
     triggerConfetti,
@@ -362,12 +364,27 @@ export const DashboardView: React.FC = () => {
               {materials.length}
             </span>
           </div>
-          <button
-            onClick={() => setActiveTab("library")}
-            className="text-[#0A1931] hover:underline text-xs sm:text-sm font-bold cursor-pointer transition"
-          >
-            View all ({materials.length})
-          </button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              id="home-search-button"
+              onClick={() => setIsSearchOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-[#0A1931] shadow-2xs transition active:scale-95 cursor-pointer"
+              title="Search Decks, Notes & Files (⌘K)"
+            >
+              <Search className="w-3.5 h-3.5 text-slate-500" />
+              <span>Search</span>
+              <kbd className="hidden sm:inline-block text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200 font-mono">
+                ⌘K
+              </kbd>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("library")}
+              className="text-[#0A1931] hover:underline text-xs sm:text-sm font-bold cursor-pointer transition"
+            >
+              View all ({materials.length})
+            </button>
+          </div>
         </div>
 
         {/* When user has uploaded materials */}

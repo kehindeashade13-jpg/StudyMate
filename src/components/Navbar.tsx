@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useStudy } from "../context/StudyContext";
 import {
   BookOpen,
-  Search,
   Plus,
   Flame,
   Zap,
@@ -25,7 +24,6 @@ export const Navbar: React.FC = () => {
     activeTab,
     setActiveTab,
     openAddMaterialModal,
-    setIsSearchOpen,
     setIsAssistantOpen,
     setIsSidebarOpen,
     notifications,
@@ -37,14 +35,10 @@ export const Navbar: React.FC = () => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  // If on dashboard, the custom top bar is embedded in DashboardView matching IMG_8794.jpeg
-  if (activeTab === "dashboard") {
-    return null;
-  }
-
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const tabLabels: Record<string, string> = {
+    dashboard: "Home",
     library: "My Decks & Notes",
     learn: "Interactive Lesson",
     memorise: "Memorise & Flashcards",
@@ -60,28 +54,37 @@ export const Navbar: React.FC = () => {
   return (
     <header className="sticky top-0 z-30 bg-[#F8FAFC]/95 backdrop-blur-md border-b border-slate-200 text-[#0F172A]">
       <div className="max-w-7xl mx-auto px-2.5 sm:px-4 lg:px-6 h-15 flex items-center justify-between gap-2 sm:gap-3">
-        {/* Left: Home, Hamburger Menu, and Brand Logo */}
+        {/* Left: Home, Hamburger Menu, and Brand Logo & Name */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 min-w-0">
-          <button
-            onClick={() => setActiveTab("dashboard")}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-[#0F172A] text-xs font-bold shadow-2xs transition active:scale-95 cursor-pointer shrink-0"
-            title="Go to Home"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span className="hidden sm:inline">Home</span>
-          </button>
+          {activeTab !== "dashboard" && (
+            <button
+              id="navbar-back-home-btn"
+              onClick={() => setActiveTab("dashboard")}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-[#0F172A] text-xs font-bold shadow-2xs transition active:scale-95 cursor-pointer shrink-0"
+              title="Go to Home"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span className="hidden sm:inline">Home</span>
+            </button>
+          )}
 
+          {/* Hamburger Menu Button */}
           <button
+            id="hamburger-menu-btn"
             onClick={() => setIsSidebarOpen(true)}
-            className="p-1.5 sm:p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-[#0F172A] transition cursor-pointer shrink-0"
+            className="p-2 sm:p-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-[#0A1931] transition cursor-pointer shrink-0 shadow-2xs flex items-center justify-center active:scale-95"
             title="Open Menu"
+            aria-label="Open Navigation Menu"
           >
-            <Menu className="w-4 h-4" />
+            <Menu className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A1931]" />
           </button>
 
+          {/* Website Logo & Website Name */}
           <div
+            id="website-brand-header"
             className="flex items-center gap-2 cursor-pointer select-none shrink-0"
             onClick={() => setActiveTab("dashboard")}
+            title="StudyMate Home"
           >
             <img
               src="/studymate_logo.jpg"
@@ -89,33 +92,18 @@ export const Navbar: React.FC = () => {
               referrerPolicy="no-referrer"
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl object-cover border border-slate-200 shadow-2xs shrink-0"
             />
-            <span className="text-base sm:text-xl font-black tracking-tight text-[#0F172A]">
+            <span className="text-base sm:text-xl font-black tracking-tight text-[#0A1931]">
               StudyMate
             </span>
           </div>
 
-          <div className="border-l border-slate-200 pl-2 hidden lg:block truncate max-w-[140px]">
-            <h2 className="text-xs font-semibold text-slate-500 truncate">
-              {tabLabels[activeTab]}
-            </h2>
-          </div>
-        </div>
-
-        {/* Center: Search Bar Trigger (flexible, never cramps neighbors) */}
-        <div className="flex-1 max-w-xs sm:max-w-sm min-w-0 mx-1">
-          <button
-            onClick={() => setIsSearchOpen(true)}
-            className="w-full flex items-center justify-between px-2.5 sm:px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-400 text-xs hover:border-[#6366F1] transition shadow-2xs"
-          >
-            <span className="flex items-center gap-1.5 text-[#0F172A] truncate">
-              <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <span className="truncate hidden sm:inline">Search decks, notes...</span>
-              <span className="sm:hidden">Search...</span>
-            </span>
-            <kbd className="hidden sm:inline-block text-[10px] bg-slate-100 text-[#0F172A] px-1.5 py-0.5 rounded border border-slate-200 shrink-0">
-              ⌘K
-            </kbd>
-          </button>
+          {activeTab !== "dashboard" && tabLabels[activeTab] && (
+            <div className="border-l border-slate-200 pl-2 hidden lg:block truncate max-w-[140px]">
+              <h2 className="text-xs font-semibold text-slate-500 truncate">
+                {tabLabels[activeTab]}
+              </h2>
+            </div>
+          )}
         </div>
 
         {/* Right Actions: Import, Streak, Notification Bell, Profile */}
